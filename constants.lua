@@ -18,10 +18,6 @@ C.NET_GAP_SIZE     = 10
 C.SCORE_FONT_SIZE  = 40
 C.SCORE_TO_WIN     = 1
 
-return C
-
--- constants.lua
-
 -- Player 1 (left paddle) controls
 KEY_UP   = 'q'
 KEY_DOWN = 'a'
@@ -35,5 +31,7 @@ MANUAL_OPPONENT = true
 
 -- Ball properties
 BALL_RADIUS = BALL_SIZE -- ← instead of 1x1 square, we now use radius
+
+return c
 
 
