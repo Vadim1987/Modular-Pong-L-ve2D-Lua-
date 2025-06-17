@@ -15,6 +15,11 @@ end
 function Game.update(dt)
     -- Update left paddle (player)
     player:update(dt)
+    local physics = require "physics"
+
+physics.checkPaddleCollision(ball, player)
+physics.checkPaddleCollision(ball, computer)
+
 
     -- Update right paddle depending on mode
     if MANUAL_OPPONENT then
@@ -26,7 +31,7 @@ function Game.update(dt)
 
     -- Update ball position and physics
     ball:update(dt)
-
+    
     -- TODO: handle collisions, scoring, and game over
 end
 function Game.keypressed(key)
