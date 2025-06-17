@@ -1,5 +1,4 @@
 -- constants.lua
-local C = {}
 
 C.WINDOW_WIDTH     = 800
 C.WINDOW_HEIGHT    = 600
@@ -16,9 +15,7 @@ C.NET_UNIT_SIZE    = 10
 C.NET_GAP_SIZE     = 10
 
 C.SCORE_FONT_SIZE  = 40
-C.SCORE_TO_WIN     = 10
-
-return C
+C.SCORE_TO_WIN     = 1
 
 -- constants.lua
 
