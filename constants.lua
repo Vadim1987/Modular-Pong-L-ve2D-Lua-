@@ -33,3 +33,7 @@ KEY_RIGHT_DOWN = 'down'
 -- Toggle: set to true for two-player mode (manual right paddle)
 MANUAL_OPPONENT = true
 
+-- Ball properties
+BALL_RADIUS = BALL_SIZE -- ← instead of 1x1 square, we now use radius
+
+
