@@ -19,3 +19,17 @@ C.SCORE_FONT_SIZE  = 40
 C.SCORE_TO_WIN     = 10
 
 return C
+
+-- constants.lua
+
+-- Player 1 (left paddle) controls
+KEY_UP   = 'q'
+KEY_DOWN = 'a'
+
+-- Player 2 (right paddle) controls for manual opponent mode
+KEY_RIGHT_UP   = 'up'
+KEY_RIGHT_DOWN = 'down'
+
+-- Toggle: set to true for two-player mode (manual right paddle)
+MANUAL_OPPONENT = true
+
