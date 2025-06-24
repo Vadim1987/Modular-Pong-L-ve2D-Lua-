@@ -12,7 +12,9 @@ C.PADDLE_HEIGHT    = 60
 C.PADDLE_SPEED     = 260
 C.PADDLE_MARGIN    = 40
 
-C.BALL_SIZE        = 10
+-- C.BALL_SIZE        = 10   
+C.BALL_RADIUS      = 10     -- Now the puck’s radius (previously this was the square side)
+
 C.BALL_SPEED       = 220
 
 C.NET_UNIT_SIZE    = 10
