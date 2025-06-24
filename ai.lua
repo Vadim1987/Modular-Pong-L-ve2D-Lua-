@@ -65,6 +65,34 @@ AI.strategies = {
             self.vy = 0
         end
     end,
+
+-- 6. "Clever predictor" — follows predicted intersection with AI's half
+function(self, ball, dt, player)
+    -- Predict where the ball will cross AI paddle's x
+    local future_y = ball.y + (C.PADDLE_MAX_X_RIGHT - ball.x) * (ball.vy / (ball.vx or 0.01))
+    if future_y < self.y + self.height / 2 then self.vy = -self.speed
+    elseif future_y > self.y + self.height / 2 then self.vy =  self.speed
+    else self.vy = 0 end
+
+    -- Move horizontally to keep paddle between center and allowed rightmost
+    if ball.vx > 0 then
+        if ball.y > self.y + self.height/2 then
+            self.vx = self.hspeed
+        elseif ball.y < self.y + self.height/2 then
+            self.vx = -self.hspeed
+        else
+            self.vx = 0
+        end
+    else
+        -- Return to center of AI's allowed area when ball is not coming
+        if self.x > (C.PADDLE_MIN_X_RIGHT + C.PADDLE_MAX_X_RIGHT)/2 then
+            self.vx = -self.hspeed
+        else
+            self.vx = self.hspeed
+        end
+    end
+end
+
 }
 
 return AI
