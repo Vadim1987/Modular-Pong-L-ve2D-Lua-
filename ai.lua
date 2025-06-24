@@ -1,12 +1,12 @@
 -- ai.lua
--- Pure, modular AI strategies for the right paddle (the computer's side).
--- Plug and play. Some are intentionally "bad", some perfect. Pick your poison.
+-- Modular AI strategies for the right paddle (computer side).
+-- Now includes a "manual" strategy for two-player mode (arrow keys).
 
 local C = require 'constants'
 local AI = {}
 
 AI.strategies = {
-    -- 1. "Perfect" AI — always follows the ball. No mercy.
+    -- 1. "Perfect" AI — always follows the ball
     function(self, ball, dt, player)
         if ball.y + ball.size/2 < self.y + self.height/2 then
             self.vy = -self.speed
@@ -16,7 +16,7 @@ AI.strategies = {
             self.vy = 0
         end
     end,
-    -- 2. "Lazy" — only reacts if ball is close horizontally.
+    -- 2. "Lazy" — only reacts if the ball is close horizontally
     function(self, ball, dt, player)
         if math.abs(ball.x - self.x) < 200 then
             if ball.y + ball.size/2 < self.y + self.height/2 then
@@ -30,7 +30,7 @@ AI.strategies = {
             self.vy = 0
         end
     end,
-    -- 3. "Random error" — sometimes just doesn't care.
+    -- 3. "Random error" — sometimes ignores the ball
     function(self, ball, dt, player)
         if math.random() < 0.9 then
             if ball.y + ball.size/2 < self.y + self.height/2 then
@@ -44,11 +44,22 @@ AI.strategies = {
             self.vy = 0
         end
     end,
-    -- 4. "Naive mimic" — tries to follow the player's paddle position.
+    -- 4. "Naive mimic" — copies the player's paddle Y
     function(self, ball, dt, player)
         if player.y + player.height/2 < self.y + self.height/2 then
             self.vy = -self.speed
         elseif player.y + player.height/2 > self.y + self.height/2 then
+            self.vy = self.speed
+        else
+            self.vy = 0
+        end
+    end,
+    -- 5. "Manual" — two-player mode (arrow keys for right paddle)
+    function(self, ball, dt, player)
+        -- Manual control: up/down arrows for right paddle
+        if love.keyboard.isDown('up') then
+            self.vy = -self.speed
+        elseif love.keyboard.isDown('down') then
             self.vy = self.speed
         else
             self.vy = 0
