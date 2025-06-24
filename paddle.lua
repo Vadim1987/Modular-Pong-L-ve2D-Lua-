@@ -1,6 +1,4 @@
 -- paddle.lua
--- Paddle logic for both player and AI. Movement, position, rendering.
-
 local C = require 'constants'
 local Paddle = {}
 Paddle.__index = Paddle
@@ -13,26 +11,27 @@ function Paddle.new(x, y, role)
     self.width = C.PADDLE_WIDTH
     self.height = C.PADDLE_HEIGHT
     self.speed = C.PADDLE_SPEED
-    self.vy = 0 -- vertical speed
+    self.hspeed = C.PADDLE_HSPEED
+    self.vx = 0 -- horizontal velocity
+    self.vy = 0 -- vertical velocity
     return self
 end
 
 function Paddle:update(dt)
-    -- Player uses Q/A keys (classic, no nostalgia spared)
+    self.vx, self.vy = 0, 0
     if self.role == 'player' then
-        if love.keyboard.isDown('q') then
-            self.vy = -self.speed
-        elseif love.keyboard.isDown('a') then
-            self.vy = self.speed
-        else
-            self.vy = 0
-        end
-        -- Optional: mouse control (uncomment if you want it)
-        -- self.y = math.max(0, math.min(C.WINDOW_HEIGHT - self.height, love.mouse.getY() - self.height / 2))
+        if love.keyboard.isDown('w') then self.vy = -self.speed end
+        if love.keyboard.isDown('s') then self.vy =  self.speed end
+        if love.keyboard.isDown('a') then self.vx = -self.hspeed end
+        if love.keyboard.isDown('d') then self.vx =  self.hspeed end
+        -- Clamp movement to allowed area
+        self.x = math.max(C.PADDLE_MIN_X_LEFT, math.min(C.PADDLE_MAX_X_LEFT, self.x + self.vx * dt))
+        self.y = math.max(0, math.min(C.WINDOW_HEIGHT - self.height, self.y + self.vy * dt))
+    elseif self.role == 'ai' then
+        -- AI: vx/vy should be set by strategy
+        self.x = math.max(C.PADDLE_MIN_X_RIGHT, math.min(C.PADDLE_MAX_X_RIGHT, self.x + self.vx * dt))
+        self.y = math.max(0, math.min(C.WINDOW_HEIGHT - self.height, self.y + self.vy * dt))
     end
-    -- Update position, clamp inside window
-    self.y = self.y + self.vy * dt
-    self.y = math.max(0, math.min(C.WINDOW_HEIGHT - self.height, self.y))
 end
 
 function Paddle:draw()
@@ -41,3 +40,6 @@ function Paddle:draw()
 end
 
 return Paddle
+
+ 
+   
