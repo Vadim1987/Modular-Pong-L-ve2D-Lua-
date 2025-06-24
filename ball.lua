@@ -60,12 +60,15 @@ function Ball:checkPaddleCollision(paddle)
                 self.x = (self.x < paddle.x + paddle.width/2) and (paddle.x - self.radius) or (paddle.x + paddle.width + self.radius)
                 self.vx = -self.vx
                 self.vy = self.vy + 0.3 * paddle.vy
+                -- Added both paddle velocities
+                self.vx = self.vx + 0.3 * paddle.vx
+                self.vy = self.vy + 0.3 * paddle.vy
             end
         elseif hitHorizontalSide then
             -- Bounce vertically
             if self.vy * (self.y - (paddle.y + paddle.height/2)) < 0 then
                 self.y = (self.y < paddle.y + paddle.height/2) and (paddle.y - self.radius) or (paddle.y + paddle.height + self.radius)
-                self.vy = -self.vy
+                self.vy = -self.vy + 0.3 * paddle.vx
                 self.vx = self.vx + 0.3 * paddle.vy
             end
         else
@@ -77,6 +80,9 @@ function Ball:checkPaddleCollision(paddle)
             local dot = self.vx * dx + self.vy * dy
             self.vx = self.vx - 2 * dot * dx
             self.vy = self.vy - 2 * dot * dy
+             -- Added both paddle velocities
+            self.vx = self.vx + 0.3 * paddle.vx
+            self.vy = self.vy + 0.3 * paddle.vy
             -- Move ball just outside the paddle
             self.x = closestX + dx * (self.radius + 0.1)
             self.y = closestY + dy * (self.radius + 0.1)
