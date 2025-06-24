@@ -7,6 +7,12 @@ Minimal, extensible Pong for Löve2D. Pure Lua. Oldschool spirit, newschool code
 - Computer: 4 strategies available; default is “perfect”
 - Restart after game over: SPACE
 
+- Left paddle:      W/S = up/down, A/D = left/right
+- Right paddle:     Arrow keys (in manual mode), otherwise AI
+- Press Tab to switch AI modes
+- Space to restart after win
+
+
 ## Run 
 love .
 
