@@ -13,3 +13,4 @@ function Score.draw(score)
 end
 
 return Score
+
