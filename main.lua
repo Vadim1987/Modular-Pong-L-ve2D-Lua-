@@ -19,8 +19,7 @@ function love.load()
     -- Initialize paddles and ball in the center
     player = Paddle.new(C.PADDLE_MARGIN, C.WINDOW_HEIGHT/2 - C.PADDLE_HEIGHT/2, 'player')
     ai = Paddle.new(C.WINDOW_WIDTH - C.PADDLE_MARGIN - C.PADDLE_WIDTH, C.WINDOW_HEIGHT/2 - C.PADDLE_HEIGHT/2, 'ai')
-   -- ball = Ball.new(C.WINDOW_WIDTH/2 - C.BALL_SIZE/2, C.WINDOW_HEIGHT/2 - C.BALL_SIZE/2) -- previous stage
-    ball = Ball.new(C.WINDOW_WIDTH/2, C.WINDOW_HEIGHT/2) 
+    ball = Ball.new(C.WINDOW_WIDTH/2 - C.BALL_SIZE/2, C.WINDOW_HEIGHT/2 - C.BALL_SIZE/2)
 end
 
 function love.update(dt)
@@ -67,3 +66,6 @@ function love.keypressed(key)
         aiStrategy = (aiStrategy % #AI.strategies) + 1
     end
 end
+
+   
+   
