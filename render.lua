@@ -28,3 +28,5 @@ function Render.drawGameOver(score)
 end
 
 return Render
+
+
