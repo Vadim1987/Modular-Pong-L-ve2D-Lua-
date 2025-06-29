@@ -1,22 +1,31 @@
 -- constants.lua
--- All game constants are centralized here for easy tweaking.
-local C = {}
 
-C.WINDOW_WIDTH     = 800
-C.WINDOW_HEIGHT    = 600
+-- Screen
+SCREEN_WIDTH  = 640
+SCREEN_HEIGHT = 480
 
-C.PADDLE_WIDTH     = 10
-C.PADDLE_HEIGHT    = 60
-C.PADDLE_SPEED     = 260
-C.PADDLE_MARGIN    = 40
+-- Game field
+PADDLE_WIDTH      = 10
+PADDLE_HEIGHT     = 60
+BALL_SIZE         = 10
+CENTER_LINE_SIZE  = 10
+WINNING_SCORE     = 10
 
-C.BALL_SIZE        = 10
-C.BALL_SPEED       = 220
+-- Paddle positions
+PADDLE_OFFSET_X = 30  -- distance from screen edges
+LEFT_PADDLE_X   = PADDLE_OFFSET_X
+RIGHT_PADDLE_X  = SCREEN_WIDTH - PADDLE_OFFSET_X - PADDLE_WIDTH
 
-C.NET_UNIT_SIZE    = 10
-C.NET_GAP_SIZE     = 10
+-- Initial speeds
+PADDLE_SPEED = 200
+BALL_SPEED_X = 140
+BALL_SPEED_Y = 100
 
-C.SCORE_FONT_SIZE  = 40
-C.SCORE_TO_WIN     = 10
+-- Colors (RGB, range: 0 to 1)
+COLOR_BACKGROUND = {0, 0, 0}
+COLOR_FOREGROUND = {1, 1, 1}
 
-return C
+-- Player controls
+KEY_UP   = 'q'
+KEY_DOWN = 'a'
+
