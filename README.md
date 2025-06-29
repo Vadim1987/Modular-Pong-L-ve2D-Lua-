@@ -7,11 +7,13 @@ All gameplay elements are separated into logical modules — no magic numbers, j
 
 ## Features
 
-- Player vs. AI Pong (left paddle: you, right paddle: computer)
-- Four different AI strategies, from perfect bot to silly randomizer
-- Two collision strategies for the ball: simple bounce and paddle-velocity physics
-- Black-and-white retro field, dotted center line, large readable score
-- **Easy to extend:** new physics, circular puck, horizontal paddle movement, crazy themes — you name it
+- Player vs. AI or 2-player mode (toggle right paddle between AI and manual)
+- **Circular puck** with realistic radius-based collision
+- True circle-vs-rectangle collision: if the puck hits a paddle corner, it bounces physically correct (mirrored velocity about tangent)
+- All scoring and movement logic updated for new puck shape
+- Modular architecture: easy to expand, add new physics, or swap visuals
+
+...
 
 ## Controls
 
