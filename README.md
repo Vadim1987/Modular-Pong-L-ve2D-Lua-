@@ -12,6 +12,12 @@ All gameplay elements are separated into logical modules — no magic numbers, j
 - True circle-vs-rectangle collision: if the puck hits a paddle corner, it bounces physically correct (mirrored velocity about tangent)
 - All scoring and movement logic updated for new puck shape
 - Modular architecture: easy to expand, add new physics, or swap visuals
+- - Both paddles can move up/down and left/right, but only up to halfway to the centerline.
+- Left paddle controls: WASD (up, down, left, right).
+- Ball always receives the full paddle velocity (both axes) upon collision (“smash” the puck!).
+- AI opponent can now chase and intercept horizontally as well as vertically.
+- Press R to toggle the right paddle between AI and manual control.
+
 
 ...
 
