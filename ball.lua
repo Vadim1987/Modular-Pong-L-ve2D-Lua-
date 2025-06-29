@@ -5,8 +5,8 @@ Ball.__index = Ball
 
 function Ball.new()
     return setmetatable({
-        x = (SCREEN_WIDTH - BALL_SIZE) / 2,
-        y = (SCREEN_HEIGHT - BALL_SIZE) / 2,
+        x = SCREEN_WIDTH / 2,   -- center of the ball
+        y = SCREEN_HEIGHT / 2,
         vx = BALL_SPEED_X * (math.random() > 0.5 and 1 or -1),
         vy = BALL_SPEED_Y * (math.random() > 0.5 and 1 or -1)
     }, Ball)
@@ -18,7 +18,8 @@ function Ball:update(dt)
 end
 
 function Ball:draw()
-    love.graphics.rectangle("fill", self.x, self.y, BALL_SIZE, BALL_SIZE)
+    love.graphics.circle("fill", self.x, self.y, BALL_RADIUS)
 end
 
 return Ball
+
