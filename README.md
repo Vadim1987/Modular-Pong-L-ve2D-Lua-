@@ -1,28 +1,31 @@
-# Modular Pong (Löve2D, Lua)
+# Modular Pong (LÖVE2D)
 
-Minimal, extensible Pong for Löve2D. Pure Lua. Oldschool spirit, newschool code.
+> The eternal dance of paddle and pixel, reborn in modular code.
+
+A clean, **modular** version of classic single-player Atari Pong, implemented in [LÖVE2D](https://love2d.org/) and ready for real evolution.  
+All gameplay elements are separated into logical modules — no magic numbers, just named constants and clear structure.
+
+## Features
+
+- Player vs. AI Pong (left paddle: you, right paddle: computer)
+- Four different AI strategies, from perfect bot to silly randomizer
+- Two collision strategies for the ball: simple bounce and paddle-velocity physics
+- Black-and-white retro field, dotted center line, large readable score
+- **Easy to extend:** new physics, circular puck, horizontal paddle movement, crazy themes — you name it
 
 ## Controls
-- Player (left paddle): Q = up, A = down, or mouse (hold left mouse button and move up/down)
-- Computer: 4 strategies available; default is “perfect”
-- Restart after game over: SPACE
 
-- Left paddle:      W/S = up/down, A/D = left/right
-- Right paddle:     Arrow keys (in manual mode), otherwise AI
-- Press Tab to switch AI modes
-- Space to restart after win
+- **Player (left paddle):**  
+  - Up: `Q`  
+  - Down: `A`
 
+- **AI (right paddle):**  
+  - Chooses a strategy by code (see `main.lua` and `ai.lua`)
 
-## Run 
-love .
+## How to Run
 
-
-## Structure
-- main.lua — main loop
-- constants.lua — all dimensions & parameters
-- paddle.lua — paddle class
-- ball.lua — ball class
-- ai.lua — AI strategies
-- collision.lua — collision logic
-
+1. [Install LÖVE2D](https://love2d.org/) (version 11.x+ recommended)
+2. Clone or download this repo
+3. Open the project folder in terminal
+4. Run:
 
