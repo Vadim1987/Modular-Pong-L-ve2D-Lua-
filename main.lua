@@ -3,6 +3,7 @@
 require "constants"
 local Paddle = require "paddle"
 local Ball = require "ball"
+local rightPaddleControl = "ai"  -- "ai" or "player"
 local AI = require "ai"
 local Collision = require "collision"
 local Render = require "render"
@@ -17,6 +18,7 @@ function love.load()
     love.graphics.setBackgroundColor(COLOR_BG)
     leftPaddle = Paddle.new("left")
     rightPaddle = Paddle.new("right")
+    rightPaddleControl = "player" -- "ai" for AI, "player" for second player
     ball = Ball.new()
     leftScore, rightScore = 0, 0
     gameOver = false
@@ -29,10 +31,15 @@ end
 
 function love.update(dt)
     if gameOver then return end
-
     leftPaddle:update(dt, "player")
-    rightPaddle:update(dt, function(p, dt) return AI.perfect(p, ball, dt) end)
+    
+    if rightPaddleControl == "ai" then
+        rightPaddle:update(dt, function(p, dt) return AI.perfect(p, ball, dt) end)
+    else
+        rightPaddle:update(dt, "player")
+    end
 
+    
     ball:update(dt)
 
     -- Ball collision with top/bottom
@@ -77,5 +84,18 @@ function love.draw()
     Render.score(leftScore, rightScore)
     if gameOver then
         love.graphics.print("Game Over", SCREEN_WIDTH/2-32, SCREEN_HEIGHT/2-10)
+      if gameOver then
+        love.graphics.print("Game Over", SCREEN_WIDTH/2-32, SCREEN_HEIGHT/2-10)
+    else
+        love.graphics.print(
+          "Left: Q/A   Right: Up/Down  (Press R for AI on right)", 32, SCREEN_HEIGHT-24)
     end
 end
+
+function love.keypressed(key)
+    if key == "r" then
+        rightPaddleControl = (rightPaddleControl == "ai") and "player" or "ai"
+    end
+end
+
+ 
