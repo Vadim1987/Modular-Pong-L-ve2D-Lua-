@@ -10,7 +10,7 @@ function Paddle.new(x, y, isPlayer)
     self.height = PADDLE_HEIGHT
     self.speed = PADDLE_SPEED
     self.isPlayer = isPlayer
-    self.dy = 0 -- вертикальная скорость
+    self.dy = 0 -- vertical speed
     return self
 end
 
