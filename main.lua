@@ -22,8 +22,8 @@ function love.load()
     ball = Ball.new()
     leftScore, rightScore = 0, 0
     gameOver = false
-    collisionStrategy = Collision.basic  -- or Collision.add_paddle_velocity
-    rightPaddleControl = "player" -- or "ai"
+    collisionStrategy = Collision.add_paddle_velocity -- always add paddle velocity
+    rightPaddleControl = "player"
 end
 
 function resetBall()
@@ -35,14 +35,14 @@ function love.update(dt)
 
     leftPaddle:update(dt, "player")
     if rightPaddleControl == "ai" then
-        rightPaddle:update(dt, function(p, dt) return AI.perfect(p, ball, dt) end)
+        rightPaddle:update(dt, function(p, dt) return AI.smart(p, ball, dt) end)
     else
         rightPaddle:update(dt, "player")
     end
 
     ball:update(dt)
 
-    -- Ball collision with top/bottom (center and radius)
+    -- Ball collision with top/bottom
     if ball.y - BALL_RADIUS <= 0 then
         ball.y = BALL_RADIUS
         ball.vy = -ball.vy
@@ -52,11 +52,11 @@ function love.update(dt)
         ball.vy = -ball.vy
     end
 
-    -- Ball collision with paddles (now uses circular collision)
+    -- Ball collision with paddles
     collisionStrategy(ball, leftPaddle)
     collisionStrategy(ball, rightPaddle)
 
-    -- Scoring (center and radius)
+    -- Scoring
     if ball.x - BALL_RADIUS < 0 then
         rightScore = rightScore + 1
         if rightScore >= WINNING_SCORE then gameOver = true end
@@ -79,7 +79,7 @@ function love.draw()
         love.graphics.print("Game Over", SCREEN_WIDTH/2-32, SCREEN_HEIGHT/2-10)
     else
         love.graphics.print(
-            "Left: Q/A   Right: Up/Down  (Press R for AI on right)",
+            "Left: WASD   Right: Arrows  (Press R for AI on right)",
             32, SCREEN_HEIGHT - 24)
     end
 end
@@ -90,5 +90,6 @@ function love.keypressed(key)
     end
 end
 
-
  
+  
+    
