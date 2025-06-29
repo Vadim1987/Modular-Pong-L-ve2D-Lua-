@@ -29,3 +29,5 @@ COLOR_FG        = {1, 1, 1}
 -- Controls
 LEFT_PADDLE_UP     = 'q'
 LEFT_PADDLE_DOWN   = 'a'
+RIGHT_PADDLE_UP    = 'up'
+RIGHT_PADDLE_DOWN  = 'down'
