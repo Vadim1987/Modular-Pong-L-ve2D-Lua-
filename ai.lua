@@ -2,38 +2,37 @@
 
 local AI = {}
 
--- Perfect AI: always follows the ball
-function AI.perfect(paddle, ball, dt)
-    local targetY = ball.y + BALL_SIZE / 2 - PADDLE_HEIGHT / 2
-    local dir = targetY > paddle.y and 1 or -1
-    local vy = dir * PADDLE_SPEED
-    local y = paddle.y + vy * dt
-    y = math.max(0, math.min(SCREEN_HEIGHT - PADDLE_HEIGHT, y))
-    return y, vy
-end
+-- "Smart" AI: follows ball horizontally and vertically, predicts future position
+function AI.smart(paddle, ball, dt)
+    -- Target is the predicted intersection with paddle's y-plane
+    local futureX = ball.x + ball.vx * 0.5  -- simple prediction (can be improved)
+    local targetY = ball.y - PADDLE_HEIGHT / 2
+    local targetX
 
--- Very dumb AI: does not move
-function AI.static(paddle, ball, dt)
-    return paddle.y, 0
-end
+    if paddle.side == "right" then
+        targetX = math.max(RIGHT_PADDLE_MIN_X, math.min(futureX, RIGHT_PADDLE_MAX_X))
+    else
+        targetX = math.max(LEFT_PADDLE_MIN_X, math.min(futureX, LEFT_PADDLE_MAX_X))
+    end
 
--- Random jitter AI
-function AI.jitter(paddle, ball, dt)
-    local vy = (math.random() - 0.5) * 2 * PADDLE_SPEED
-    local y = paddle.y + vy * dt
-    y = math.max(0, math.min(SCREEN_HEIGHT - PADDLE_HEIGHT, y))
-    return y, vy
-end
+    local dirY = targetY > paddle.y and 1 or -1
+    local dirX = targetX > paddle.x and 1 or -1
 
--- Slightly delayed follow
-function AI.slow(paddle, ball, dt)
-    local offset = 20
-    local targetY = ball.y + offset * math.sin(love.timer.getTime())
-    local dir = targetY > paddle.y and 0.7 or -0.7
-    local vy = dir * PADDLE_SPEED
-    local y = paddle.y + vy * dt
-    y = math.max(0, math.min(SCREEN_HEIGHT - PADDLE_HEIGHT, y))
-    return y, vy
+    local vy = math.abs(targetY - paddle.y) < 5 and 0 or dirY * PADDLE_SPEED
+    local vx = math.abs(targetX - paddle.x) < 5 and 0 or dirX * PADDLE_SPEED
+
+    local y = math.max(0, math.min(SCREEN_HEIGHT - PADDLE_HEIGHT, paddle.y + vy * dt))
+    local x
+    if paddle.side == "right" then
+        x = math.max(RIGHT_PADDLE_MIN_X, math.min(RIGHT_PADDLE_MAX_X, paddle.x + vx * dt))
+    else
+        x = math.max(LEFT_PADDLE_MIN_X, math.min(LEFT_PADDLE_MAX_X, paddle.x + vx * dt))
+    end
+    return y, vy, x, vx
 end
 
 return AI
+
+
+
+
