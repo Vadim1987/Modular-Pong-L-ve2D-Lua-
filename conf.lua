@@ -1,7 +1,5 @@
--- conf.lua
 function love.conf(t)
     t.window.title = "Modular Pong"
-    t.window.width = SCREEN_WIDTH
-    t.window.height = SCREEN_HEIGHT
-    t.console = true
+    t.window.width = 640
+    t.window.height = 480
 end
