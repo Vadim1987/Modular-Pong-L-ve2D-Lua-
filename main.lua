@@ -1,367 +1,362 @@
--- main.lua - Two-player Pong 
+-- main.lua — Two-player Pong 
+require "constants"
 
-require "constants"  
+-------------------------------------------------------------
+-- Screen helpers (cached size)
+-------------------------------------------------------------
+WW, WH = 0, 0
 
--- Canvas helpers
-function W() 
-  return love.graphics.getWidth() 
+function cache_wh()
+  WW = love.graphics.getWidth()
+  WH = love.graphics.getHeight()
 end
 
-function H() 
-  return love.graphics.getHeight() 
+function W() return WW end
+function H() return WH end
+
+function resized()
+  local cw = love.graphics.getWidth()
+  local ch = love.graphics.getHeight()
+  return cw ~= WW or ch ~= WH
 end
 
-function cx(s) 
-  return W()/2 - s/2 
-end
+function cx(s) return W() / 2 - s / 2 end
+function cy(s) return H() / 2 - s / 2 end
 
-function cy(s) 
-  return H()/2 - s/2 
-end
+-------------------------------------------------------------
+-- Reliable timing (fix slow motion on Compy)
+-------------------------------------------------------------
+USE_FIXED = true       -- true: fixed 1/60, else real dt
+FIXED_DT  = 1 / 60
+MAX_STEPS = 5          -- anti-spiral cap
+TIME_T    = 0
+ACC       = 0
+SPEED_SCALE = 1.5      -- easy speed tuning
 
--- Mouse state
+-------------------------------------------------------------
+-- Global state (S) and resources
+-------------------------------------------------------------
 mouseEnabled = false
+INited = false
 
--- Global state
 S = {
-  player = {}, 
-  opp = {}, 
-  ball = {},
-  ps = 0, 
-  os = 0, 
-  state = "start"
+  player = {}, opp = {}, ball = {},
+  ps = 0, os = 0, state = "start"
 }
 
--- Create player paddle (left side)
-function initPlayer()
+FONT = nil
+TXT_START, TXT_OVER = nil, nil
+TXT_L, TXT_R = nil, nil
+TXT_HELP1, TXT_HELP2 = nil, nil
+CENTER_CANVAS = nil
+
+-------------------------------------------------------------
+-- Layout and init builders
+-------------------------------------------------------------
+function init_player()
   return {
-    x = PADDLE_OFFSET_X,
-    y = cy(PADDLE_HEIGHT),
-    w = PADDLE_WIDTH,
-    h = PADDLE_HEIGHT,
-    dy = 0
+    x = PADDLE_OFFSET_X, y = cy(PADDLE_HEIGHT),
+    w = PADDLE_WIDTH, h = PADDLE_HEIGHT, dy = 0
   }
 end
 
--- Create opponent paddle (right side)
-function initOpponent()
+function init_opp()
   local wx = W() - PADDLE_OFFSET_X - PADDLE_WIDTH
+  return { x = wx, y = cy(PADDLE_HEIGHT),
+    w = PADDLE_WIDTH, h = PADDLE_HEIGHT, dy = 0 }
+end
+
+function init_ball()
   return {
-    x = wx,
-    y = cy(PADDLE_HEIGHT),
-    w = PADDLE_WIDTH,
-    h = PADDLE_HEIGHT,
-    dy = 0
+    x = cx(BALL_SIZE), y = cy(BALL_SIZE),
+    dx = BALL_SPEED_X, dy = BALL_SPEED_Y, s = BALL_SIZE
   }
 end
 
--- Create ball at screen center
-function initBall()
-  return {
-    x = cx(BALL_SIZE),
-    y = cy(BALL_SIZE),
-    dx = BALL_SPEED_X,
-    dy = BALL_SPEED_Y,
-    s = BALL_SIZE
-  }
-end
-
--- Layout: build all objects
 function layout()
-  S.player = initPlayer()
-  S.opp    = initOpponent()
-  S.ball   = initBall()
+  S.player = init_player()
+  S.opp = init_opp()
+  S.ball = init_ball()
 end
 
-layout()
-
--- Enable mouse control
-love.mouse.setRelativeMode(true)
-mouseEnabled = true
-
--- Clamp paddle to screen
-function clampPaddle(p)
-  if p.y < 0 then 
-    p.y = 0
-    p.dy = 0
-  end
-  
-  local maxY = H() - p.h
-  if p.y > maxY then 
-    p.y = maxY
-    p.dy = 0
-  end
-end
-
--- Mouse control for left player
-function love.mousemoved(x, y, dx, dy, istouch)
-  if not mouseEnabled then return end
-  if istouch then return end
-  if S.state ~= "play" then return end
-  
-  local p = S.player
-  p.y = p.y + dy * MOUSE_SENSITIVITY
-  clampPaddle(p)
-end
-
--- Move paddle smoothly
-function movePaddle(p, dir, dt)
-  if dir ~= 0 then
-    p.dy = PADDLE_SPEED * dir
-  else
-    p.dy = 0
-  end
-  
-  p.y = p.y + p.dy * dt
-  clampPaddle(p)
-end
-
--- Ball movement
-function moveBall(b, dt)
-  b.x = b.x + b.dx * dt
-  b.y = b.y + b.dy * dt
-end
-
--- Ball bounces off walls
-function bounceWalls(b)
-  if b.y <= 0 then 
-    b.y = 0
-    b.dy = -b.dy
-  end
-  
-  local maxY = H() - b.s
-  if b.y >= maxY then
-    b.y = maxY
-    b.dy = -b.dy
-  end
-end
-
--- Paddle collision
-function collide(b, p, offset)
-  local hitX = b.x < p.x + p.w
-  local hitX2 = b.x + b.s > p.x
-  local hitY = b.y < p.y + p.h
-  local hitY2 = b.y + b.s > p.y
-  
-  if hitX and hitX2 and hitY and hitY2 then
-    b.x = p.x + offset
-    b.dx = -b.dx
-  end
-end
-
--- Update ball physics
-function updateBall(dt)
-  local b = S.ball
-  moveBall(b, dt)
-  bounceWalls(b)
-  collide(b, S.player, S.player.w)
-  collide(b, S.opp, -b.s)
-end
-
--- Check win condition
-function checkWin()
-  local pWin = S.ps >= WIN_SCORE
-  local oWin = S.os >= WIN_SCORE
-  return pWin or oWin
-end
-
--- Handle scoring
-function scored(side)
-  if side == "opp" then 
-    S.os = S.os + 1 
-  else 
-    S.ps = S.ps + 1 
-  end
-  
-  if checkWin() then
-    S.state = "gameover"
-    return true
-  end
-  return false
-end
-
--- Check out-of-bounds
-function checkScore()
-  local b = S.ball
-  if b.x < 0 then 
-    return scored("opp") 
-  end
-  if b.x + b.s > W() then 
-    return scored("plr") 
-  end
-  return false
-end
-
--- Reset ball position
-function resetBall()
-  local b = S.ball
-  b.x = cx(BALL_SIZE)
-  b.y = cy(BALL_SIZE)
-  
-  local s = S.ps + S.os
-  local dir = (s % 2 == 0) and 1 or -1
-  b.dx = dir * BALL_SPEED_X
-  
-  local yMod = (s % 3 - 1) * BALL_SPEED_Y
-  b.dy = yMod * 0.3
-end
-
--- Update left paddle
-function updateLeft(dt)
-  local dir = 0
-  if love.keyboard.isDown("q") then 
-    dir = -1 
-  end
-  if love.keyboard.isDown("a") then 
-    dir = 1 
-  end
-  movePaddle(S.player, dir, dt)
-end
-
--- Update right paddle
-function updateRight(dt)
-  local dir = 0
-  if love.keyboard.isDown("up") then 
-    dir = -1 
-  end
-  if love.keyboard.isDown("down") then 
-    dir = 1 
-  end
-  movePaddle(S.opp, dir, dt)
-end
-
--- Check if ball is out
-function ballOut()
-  local b = S.ball
-  local outL = b.x < 0
-  local outR = b.x + b.s > W()
-  return outL or outR
-end
-
--- Main update loop
-function love.update(dt)
-  if S.state ~= "play" then return end
-
-  updateLeft(dt)
-  updateRight(dt)
-  updateBall(dt)
-  
-  if checkScore() then return end
-  if ballOut() then resetBall() end
-end
-
--- Draw paddle
-function drawPaddle(p)
-  love.graphics.rectangle(
-    "fill", p.x, p.y, p.w, p.h
-  )
-end
-
--- Draw ball
-function drawBall(b)
-  love.graphics.rectangle(
-    "fill", b.x, b.y, b.s, b.s
-  )
-end
-
--- Draw scores
-function drawScores()
-  local leftX = W()/2 - 60
-  local rightX = W()/2 + 40
-  love.graphics.print(S.ps, leftX, SCORE_OFFSET_Y)
-  love.graphics.print(S.os, rightX, SCORE_OFFSET_Y)
-end
-
--- Draw center line
-function drawCenter()
+function build_center_canvas()
+  if CENTER_CANVAS then CENTER_CANVAS:release() end
+  CENTER_CANVAS = love.graphics.newCanvas(W(), H())
+  love.graphics.setCanvas(CENTER_CANVAS)
+  love.graphics.clear(0, 0, 0, 0)
   love.graphics.setColor(COLOR_FG)
-  local x = W()/2 - 2
+  local x = math.floor(W() / 2 - 2 + 0.5)
   local step = BALL_SIZE * 2
   local y = 0
   while y < H() do
-    love.graphics.rectangle(
-      "fill", x, y, 4, BALL_SIZE
-    )
+    love.graphics.rectangle("fill", x, y, 4, BALL_SIZE)
     y = y + step
   end
+  love.graphics.setCanvas()
 end
 
--- Draw start text
-function drawStartText()
-  local msg = "Press Space to Start"
-  local cy = H()/2 - 16
-  love.graphics.printf(msg, 0, cy, W(), "center")
+function build_static_texts()
+  FONT = love.graphics.getFont()
+  TXT_START = love.graphics.newText(
+    FONT, "Press Space to Start"
+  )
+  TXT_OVER = love.graphics.newText(
+    FONT, "Game Over - Space to Restart"
+  )
+  TXT_HELP1 = love.graphics.newText(
+    FONT, "Left: Q/A/Mouse | Right: Arrows"
+  )
+  TXT_HELP2 = love.graphics.newText(
+    FONT, "Space: Start | Esc: Quit"
+  )
 end
 
--- Draw controls help
-function drawControls()
-  love.graphics.setColor(0.6, 0.6, 0.6)
-  local line1 = "Left: Q/A/Mouse | Right: Arrows"
-  local line2 = "Space: Start | Esc: Quit"
-  love.graphics.print(line1, 20, H() - 40)
-  love.graphics.print(line2, 20, H() - 20)
-  love.graphics.setColor(COLOR_FG)
+function rebuild_score_texts()
+  if TXT_L then TXT_L:release() end
+  if TXT_R then TXT_R:release() end
+  TXT_L = love.graphics.newText(FONT, tostring(S.ps))
+  TXT_R = love.graphics.newText(FONT, tostring(S.os))
 end
 
--- Draw game over
-function drawGameOver()
-  local msg = "Game Over - Space to Restart"
-  local cy = H()/2 - 16
-  love.graphics.printf(msg, 0, cy, W(), "center")
-end
-
--- Draw state messages
-function drawMessages()
-  if S.state == "start" then 
-    drawStartText() 
-  end
-  if S.state == "gameover" then 
-    drawGameOver() 
-  end
-end
-
--- Main draw loop
-function love.draw()
-  love.graphics.clear(COLOR_BG)
-  love.graphics.setColor(COLOR_FG)
-  
-  drawCenter()
-  drawPaddle(S.player)
-  drawPaddle(S.opp)
-  drawBall(S.ball)
-  drawScores()
-  drawControls()
-  drawMessages()
-end
-
--- Handle start state
-function handleStart()
-  S.state = "play"
-  resetBall()
-end
-
--- Handle game over state
-function handleGameOver()
-  S.ps = 0
-  S.os = 0
+function do_init()
+  cache_wh()
   layout()
-  S.state = "start"
+  build_center_canvas()
+  build_static_texts()
+  rebuild_score_texts()
+  love.mouse.setRelativeMode(true)
+  mouseEnabled = true
+  TIME_T = love.timer.getTime()
+  INited = true
 end
 
--- Keyboard input
+function ensure_init()
+  if not INited then do_init() end
+  if resized() then
+    cache_wh(); layout(); build_center_canvas()
+  end
+end
+
+-------------------------------------------------------------
+-- Paddle helpers
+-------------------------------------------------------------
+function clamp_paddle(p)
+  if p.y < 0 then p.y = 0; p.dy = 0 end
+  local maxY = H() - p.h
+  if p.y > maxY then p.y = maxY; p.dy = 0 end
+end
+
+function move_paddle(p, dir, dt)
+  p.dy = (dir ~= 0) and (PADDLE_SPEED * dir) or 0
+  p.y = p.y + p.dy * dt
+  clamp_paddle(p)
+end
+
+-------------------------------------------------------------
+-- Input (mouse + keyboard)
+-------------------------------------------------------------
+function love.mousemoved(x, y, dx, dy, istouch)
+  if not mouseEnabled or istouch then return end
+  if S.state ~= "play" then return end
+  local p = S.player
+  p.y = p.y + dy * MOUSE_SENSITIVITY
+  clamp_paddle(p)
+end
+
 function love.keypressed(k)
   if k == "space" then
     if S.state == "start" then
-      handleStart()
+      S.state = "play"; reset_ball()
     elseif S.state == "gameover" then
-      handleGameOver()
+      S.ps, S.os = 0, 0
+      rebuild_score_texts()
+      layout(); S.state = "start"
     end
   elseif k == "escape" then
     love.event.quit()
   end
 end
 
--- Recenter on canvas resize
-function love.resize() 
-  layout() 
+-------------------------------------------------------------
+-- Ball physics and collisions
+-------------------------------------------------------------
+function move_ball(b, dt)
+  b.x = b.x + b.dx * dt
+  b.y = b.y + b.dy * dt
+end
+
+function bounce_walls(b)
+  if b.y <= 0 then b.y = 0; b.dy = -b.dy end
+  local maxY = H() - b.s
+  if b.y >= maxY then b.y = maxY; b.dy = -b.dy end
+end
+
+function collide(b, p, off)
+  local hx1 = b.x < p.x + p.w
+  local hx2 = b.x + b.s > p.x
+  local hy1 = b.y < p.y + p.h
+  local hy2 = b.y + b.s > p.y
+  if hx1 and hx2 and hy1 and hy2 then
+    b.x = p.x + off; b.dx = -b.dx
+  end
+end
+
+function update_ball(dt)
+  local b = S.ball
+  move_ball(b, dt)
+  bounce_walls(b)
+  collide(b, S.player, S.player.w)
+  collide(b, S.opp, -b.s)
+end
+
+-------------------------------------------------------------
+-- Scoring and reset
+-------------------------------------------------------------
+function check_win()
+  return S.ps >= WIN_SCORE or S.os >= WIN_SCORE
+end
+
+function scored(side)
+  if side == "opp" then S.os = S.os + 1
+  else S.ps = S.ps + 1 end
+  rebuild_score_texts()
+  if check_win() then S.state = "gameover"; return true end
+  return false
+end
+
+function check_score()
+  local b = S.ball
+  if b.x < 0 then return scored("opp") end
+  if b.x + b.s > W() then return scored("plr") end
+  return false
+end
+
+function ball_out()
+  local b = S.ball
+  return b.x < 0 or (b.x + b.s > W())
+end
+
+function reset_ball()
+  local b = S.ball
+  b.x = cx(BALL_SIZE); b.y = cy(BALL_SIZE)
+  local s = S.ps + S.os
+  local dir = (s % 2 == 0) and 1 or -1
+  b.dx = dir * BALL_SPEED_X
+  local ymod = (s % 3 - 1) * BALL_SPEED_Y
+  b.dy = ymod * 0.3
+end
+
+-------------------------------------------------------------
+-- Player updates
+-------------------------------------------------------------
+function update_left(dt)
+  local dir = 0
+  if love.keyboard.isDown("q") then dir = -1
+  elseif love.keyboard.isDown("a") then dir = 1 end
+  move_paddle(S.player, dir, dt)
+end
+
+function update_right(dt)
+  local dir = 0
+  if love.keyboard.isDown("up") then dir = -1
+  elseif love.keyboard.isDown("down") then dir = 1 end
+  move_paddle(S.opp, dir, dt)
+end
+
+-------------------------------------------------------------
+-- Stepper and update loop (fixed or real dt)
+-------------------------------------------------------------
+function step_game(dt)
+  if S.state ~= "play" then return end
+  local sdt = dt * SPEED_SCALE
+  update_left(sdt)
+  update_right(sdt)
+  update_ball(sdt)
+  if check_score() then return end
+  if ball_out() then reset_ball() end
+end
+
+function love.update(dt)
+  ensure_init()
+  local now = love.timer.getTime()
+  local rdt = now - TIME_T
+  TIME_T = now
+
+  if USE_FIXED then
+    ACC = ACC + rdt
+    local steps = 0
+    while ACC >= FIXED_DT and steps < MAX_STEPS do
+      step_game(FIXED_DT)
+      ACC = ACC - FIXED_DT
+      steps = steps + 1
+    end
+  else
+    step_game(rdt)
+  end
+end
+
+-------------------------------------------------------------
+-- Drawing (baked center + cached text)
+-------------------------------------------------------------
+function draw_bg()
+  love.graphics.clear(COLOR_BG)
+  love.graphics.setColor(COLOR_FG)
+end
+
+function draw_paddle(p)
+  local x = math.floor(p.x + 0.5)
+  local y = math.floor(p.y + 0.5)
+  love.graphics.rectangle("fill", x, y, p.w, p.h)
+end
+
+function draw_ball(b)
+  local x = math.floor(b.x + 0.5)
+  local y = math.floor(b.y + 0.5)
+  love.graphics.rectangle("fill", x, y, b.s, b.s)
+end
+
+function draw_scores()
+  local lx = W() / 2 - 60
+  local rx = W() / 2 + 40
+  love.graphics.draw(TXT_L, lx, SCORE_OFFSET_Y)
+  love.graphics.draw(TXT_R, rx, SCORE_OFFSET_Y)
+end
+
+function draw_controls()
+  love.graphics.setColor(0.6, 0.6, 0.6)
+  love.graphics.draw(TXT_HELP1, 20, H() - 40)
+  love.graphics.draw(TXT_HELP2, 20, H() - 20)
+  love.graphics.setColor(COLOR_FG)
+end
+
+function draw_start()
+  local x = (W() - TXT_START:getWidth()) / 2
+  local y = H() / 2 - 16
+  love.graphics.draw(TXT_START, x, y)
+end
+
+function draw_gameover()
+  local x = (W() - TXT_OVER:getWidth()) / 2
+  local y = H() / 2 - 16
+  love.graphics.draw(TXT_OVER, x, y)
+end
+
+function love.draw()
+  ensure_init()
+  draw_bg()
+  love.graphics.draw(CENTER_CANVAS)
+  draw_paddle(S.player)
+  draw_paddle(S.opp)
+  draw_ball(S.ball)
+  draw_scores()
+  draw_controls()
+  if S.state == "start" then draw_start() end
+  if S.state == "gameover" then draw_gameover() end
+end
+
+-------------------------------------------------------------
+-- Resize hook (best effort; ensure_init handles too)
+-------------------------------------------------------------
+function love.resize()
+  cache_wh(); layout(); build_center_canvas()
 end
