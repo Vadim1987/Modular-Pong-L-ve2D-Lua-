@@ -1,29 +1,29 @@
-# Pong - Two-player Game
 
-In this example, we explore dual input systems, 
-multiplayer gameplay, collision detection, and game 
-state management. You will learn how to create a 
-competitive game where two players face each other 
-in real-time.
+# Pong - Single Player Game
+
+In this example, we explore keyboard and mouse input, 
+simple AI behavior, collision detection, and game state 
+management. You will learn how to create a game where 
+you compete against a computer opponent.
 
 ```
      |   10 : 8   |
      |            |
- [|] |     []     | [|]
-     |            |
+ [|] |     []     |  |
+     |            | [|]
 ```
 
-This program implements a two-player Pong game with:
-- Keyboard and mouse control for left player
-- Keyboard control for right player
+This program implements a single-player Pong game with:
+- Keyboard and mouse control for the player
+- AI opponent that follows the ball
 - Real-time collision detection
 - Score tracking and game states
 
 
 ## Concepts Covered
 
-- **Dual input systems** - keyboard and mouse together
-- **Multiplayer input** - handling two players
+- **Input handling** - keyboard and relative mouse mode
+- **Simple AI** - opponent tracks ball position
 - **Game loop** - update and draw callbacks
 - **Collision detection** - AABB rectangle overlap
 - **State management** - start, play, and game over
@@ -41,10 +41,10 @@ BALL_SIZE      = 10
 BALL_SPEED_X   = 240
 BALL_SPEED_Y   = 120
 WIN_SCORE      = 10
-MOUSE_SENSITIVITY = 1.0
+AI_DEADZONE    = 10
 ```
 
-**main.lua** - game logic, rendering, and input
+**main.lua** - game logic, AI, rendering, and input
 
 
 ## Program Structure
@@ -55,11 +55,11 @@ All game state is kept in a single global table `S`:
 
 ```lua
 S = {
-  player = {},   -- left paddle
-  opp = {},      -- right paddle
+  player = {},   -- your paddle (left)
+  opp = {},      -- AI paddle (right)
   ball = {},     -- ball
-  ps = 0,        -- left player score
-  os = 0,        -- right player score
+  ps = 0,        -- player score
+  os = 0,        -- opponent score
   state = "start"
 }
 ```
@@ -86,14 +86,14 @@ Moving "up" means decreasing Y, moving "down" means
 increasing Y.
 
 
-## Input Handling
+## Player Input
 
-### Left Player - Keyboard
+### Keyboard Control
 
-The left player uses Q and A keys:
+The game checks keyboard state each frame:
 
 ```lua
-function updateLeft(dt)
+function updatePlayer(dt)
   local dir = 0
   if love.keyboard.isDown("q") then 
     dir = -1   -- up
@@ -105,17 +105,24 @@ function updateLeft(dt)
 end
 ```
 
+The `dir` variable represents direction:
+- `-1` = upward (decrease Y)
+- `0` = stationary
+- `1` = downward (increase Y)
 
-### Left Player - Mouse
 
-We enable relative mouse mode for the left player:
+### Mouse Control - Relative Mode
+
+We enable relative mouse mode to track movement 
+without cursor constraints:
 
 ```lua
 love.mouse.setRelativeMode(true)
 mouseEnabled = true
 ```
 
-This provides cursor-free control:
+This changes how mouse data is reported. Instead of 
+absolute coordinates, we receive displacement values:
 
 ```lua
 function love.mousemoved(x, y, dx, dy, istouch)
@@ -129,44 +136,82 @@ function love.mousemoved(x, y, dx, dy, istouch)
 end
 ```
 
-The `dy` parameter represents vertical mouse 
-displacement. Moving up 5 pixels gives `dy = -5`.
+The `dx` and `dy` parameters represent pixels moved 
+since the last callback. Moving the mouse up 5 pixels 
+gives `dy = -5`.
+
+Relative mode advantages:
+- Cursor is hidden during gameplay
+- No screen edge limitations
+- More precise control
 
 
-### Right Player - Keyboard
+### Dual Input
 
-The right player uses arrow keys:
+Both keyboard and mouse control the player paddle 
+simultaneously. They both modify `S.player.y`, so 
+their effects combine naturally.
+
+
+## AI Opponent
+
+### Simple Tracking AI
+
+The opponent paddle follows the ball's Y position:
 
 ```lua
-function updateRight(dt)
-  local dir = 0
-  if love.keyboard.isDown("up") then 
-    dir = -1   -- up
+function updateOpp(dt)
+  local c = S.opp.y + S.opp.h / 2
+  local by = S.ball.y + S.ball.size / 2
+  local diff = by - c
+  
+  if math.abs(diff) < AI_DEADZONE then
+    S.opp.dy = 0
+  else
+    local dir = diff > 0 and 1 or -1
+    movePaddle(S.opp, dir, dt)
   end
-  if love.keyboard.isDown("down") then 
-    dir = 1    -- down
-  end
-  movePaddle(S.opp, dir, dt)
 end
 ```
 
+How it works:
+1. Calculate paddle center (`c`)
+2. Calculate ball center (`by`)
+3. Find the difference (`diff`)
+4. If difference is small (within deadzone), stop
+5. Otherwise, move toward the ball
 
-### Why Dual Input Works
+The deadzone prevents jitter. Without it, the paddle 
+would constantly oscillate around the ball position.
 
-Both keyboard and mouse modify `S.player.y`:
+
+### AI Deadzone
 
 ```lua
--- Keyboard in love.update():
-if love.keyboard.isDown("q") then
-  S.player.y = S.player.y - PADDLE_SPEED * dt
-end
-
--- Mouse in love.mousemoved():
-S.player.y = S.player.y + dy * MOUSE_SENSITIVITY
+AI_DEADZONE = 10
 ```
 
-Their effects combine naturally. The left player can 
-use either or both simultaneously.
+This creates a "comfort zone" around the ball. If the 
+paddle center is within 10 pixels of the ball center, 
+the AI stops moving.
+
+Visualization:
+```
+Ball center: y = 300
+
+Deadzone: 290 to 310
+  ┌─────────┐
+  │         │
+  │    ●    │  ← AI stops here
+  │         │
+  └─────────┘
+
+Outside deadzone: AI moves toward ball
+```
+
+Adjusting this value changes AI behavior:
+- Smaller (5) = more precise, but jittery
+- Larger (20) = smoother, but less accurate
 
 
 ## Movement and Physics
@@ -188,7 +233,9 @@ function movePaddle(p, dir, dt)
 end
 ```
 
-Without `dt`, movement would depend on frame rate.
+Without `dt`, movement speed would depend on frame 
+rate. A computer running at 30 FPS would see the 
+paddle move half as fast as one at 60 FPS.
 
 Example:
 ```
@@ -217,13 +264,16 @@ function clampPaddle(p)
 end
 ```
 
+When a paddle hits the edge, we stop its velocity 
+to prevent visual jitter.
 
 
 ## Collision Detection
 
 ### AABB Collision
 
-Two rectangles overlap if all four edge comparisons 
+We use Axis-Aligned Bounding Box collision. Two 
+rectangles overlap if all four edge comparisons 
 are true:
 
 ```lua
@@ -245,11 +295,11 @@ Visualization:
 Paddle:          Ball:
 ┌────┐          ┌──┐
 │    │          └──┘
-│    │  Check: overlap on all axes?
+│    │  Check: do they overlap?
 └────┘
 
-All edges overlap → collision
-Ball reverses direction
+If all edges overlap → collision
+Ball direction reverses
 ```
 
 
@@ -272,17 +322,20 @@ function bounceWalls(b)
 end
 ```
 
+Reversing `dy` changes vertical direction while 
+maintaining speed.
+
 
 ## Game Loop
 
-The game runs continuously:
+The game runs in a continuous loop:
 
 ```lua
 function love.update(dt)
   if S.state ~= "play" then return end
 
-  updateLeft(dt)    -- left player input
-  updateRight(dt)   -- right player input
+  updatePlayer(dt)  -- player input
+  updateOpp(dt)     -- Computer behavior
   updateBall(dt)    -- physics
   
   if checkScore() then return end
@@ -292,107 +345,82 @@ end
 
 Each frame:
 1. Check game state
-2. Process both players' input
-3. Update ball position and collisions
-4. Check for scoring
-5. Reset ball if needed
+2. Process player input
+3. Update AI opponent
+4. Update ball position and collisions
+5. Check for scoring
+6. Reset ball if out of bounds
 
 
 ## Code Reuse
 
-Both paddles use identical movement logic:
+Notice how both paddles use the same movement function:
 
 ```lua
-function updateLeft(dt)
+function updatePlayer(dt)
   local dir = 0
   if love.keyboard.isDown("q") then dir = -1 end
   if love.keyboard.isDown("a") then dir = 1 end
   movePaddle(S.player, dir, dt)  -- shared
 end
 
-function updateRight(dt)
-  local dir = 0
-  if love.keyboard.isDown("up") then dir = -1 end
-  if love.keyboard.isDown("down") then dir = 1 end
+function updateOpp(dt)
+  -- AI calculates direction
+  local dir = diff > 0 and 1 or -1
   movePaddle(S.opp, dir, dt)     -- same function
 end
 ```
 
-This demonstrates DRY (Don't Repeat Yourself). 
-Changes to paddle behavior happen in one place.
-
-
-## Relative Mouse Mode
-
-Normal vs Relative mode comparison:
-
-**Normal mode:**
-```
-Cursor visible
-Mouse at x=100, y=200
-Move 5 pixels right
-Result: x=105, y=200
-```
-
-**Relative mode:**
-```
-Cursor hidden
-Mouse position unknown/irrelevant
-Move 5 pixels right
-Result: dx=5, dy=0
-```
-
-Relative mode advantages:
-- No cursor interference
-- No screen edge limits
-- Precise game control
+This demonstrates the DRY principle (Don't Repeat 
+Yourself). Changes to paddle movement only need to 
+be made once.
 
 
 ## Experimentation
 
-The program encourages exploration:
+The program is designed for interactive exploration.
 
-**Adjust game speed:**
+**Adjust difficulty:**
 ```lua
-PADDLE_SPEED = 120   -- slower paddles
-BALL_SPEED_X = 400   -- faster ball
+AI_DEADZONE = 5    -- harder (Computer more precise)
+AI_DEADZONE = 20   -- easier (Computer less precise)
+PADDLE_SPEED = 120 -- slower paddles
 ```
 
-**Change mouse feel:**
+**Change ball speed:**
+```lua
+BALL_SPEED_X = 400  -- faster horizontal
+BALL_SPEED_Y = 200  -- faster vertical
+```
+
+**Modify mouse sensitivity:**
 ```lua
 MOUSE_SENSITIVITY = 0.5  -- less sensitive
 MOUSE_SENSITIVITY = 2.0  -- more sensitive
 ```
 
-**Modify appearance:**
+**Change colors:**
 ```lua
 COLOR_BG = {0, 0.1, 0.2}  -- dark blue
 COLOR_FG = {0, 1, 0}      -- green
-PADDLE_HEIGHT = 80        -- taller paddles
 ```
 
-Colors use RGB from 0 to 1:
-- `{1, 0, 0}` = red
-- `{0, 1, 0}` = green
-- `{0, 0, 1}` = blue
+Colors use RGB values from 0 to 1.
 
-
-## User Documentation
-
-This program is a two-player competitive Pong game.
 
 **Controls:**
-- Left player: `Q` (up) / `A` (down) or mouse
-- Right player: `↑` (up) / `↓` (down)
+- Player: `Q` (up) / `A` (down) or mouse
 - `Space` - start or restart game
 - `Esc` - quit
 
 **Gameplay:**
 First to reach 10 points wins. The ball bounces off 
-walls and paddles. When the ball goes past a paddle, 
-the other player scores.
+walls and paddles. If the ball goes past your paddle, 
+the opponent scores.
 
-The left player can use keyboard, mouse, or both 
-simultaneously for maximum control.
+The computer opponent tracks the ball automatically 
+and will try to intercept it.
+
+
 
 
